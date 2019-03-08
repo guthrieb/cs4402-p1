@@ -1,0 +1,112 @@
+language ESSENCE' 1.0
+
+given initial_grid: matrix indexed by [int(1..p), int(1..p)] of int(0,1)
+
+find move_grid: matrix indexed by [int(1..p*p), int(1..2)] of int(0..p)
+
+such that
+
+forAll move_no : int(1..p*p) .
+  move_grid[move_no, 1] = 0 <-> move_grid[move_no, 2] = 0,
+
+forAll move_no : int(1..p*p) .
+  forAll move_no_2 : int(1..p*p) .
+    move_grid[move_no, 1] != 0 /\ move_no != move_no_2 ->
+    (
+      move_grid[move_no, 1] != move_grid[move_no_2, 1]
+      \/
+      move_grid[move_no, 2] != move_grid[move_no_2, 2]
+      ),
+
+forAll row : int(1..p) .
+  forAll col : int(1..p) .
+      (
+        initial_grid[row, col] != 1 ->
+          exists i : int(1..p*p) .
+            move_grid[i, 1] = col /\ move_grid[i, 2] = row
+          )
+      /\
+      (
+      initial_grid[row, col] = 1 ->
+        forAll i : int(1..p*p) .
+          move_grid[i, 1] != col \/ move_grid[i, 2] != row
+          ),
+
+
+forAll move_no : int(2..p*p) .
+  move_grid[move_no, 1] != 0 ->
+    (
+      (
+        move_grid[move_no, 2] = move_grid[move_no-1, 2]
+        /\
+        (
+          move_grid[move_no, 1] = move_grid[move_no-1, 1] + 1
+          \/
+          move_grid[move_no, 1] = move_grid[move_no-1, 1] - 1
+          )
+        )
+      \/
+      (
+        move_grid[move_no, 1] = move_grid[move_no-1, 1]
+        /\
+        (
+          move_grid[move_no, 2] = move_grid[move_no-1, 2] + 1
+          \/
+          move_grid[move_no, 2] = move_grid[move_no-1, 2] - 1
+          )
+        )
+      ),
+
+forAll move_no : int(2..p*p) .
+  move_grid[move_no, 1] != 0 -> (
+    (
+      (
+        $ Current move to right of previous move
+        move_grid[move_no, 1] = move_grid[move_no-1, 1] + 1
+        /\
+        $ Next move not moved in x coord, i.e. moved up or down
+        move_grid[move_no+1, 1] = move_grid[move_no, 1]
+        ) -> (
+          $ The next move will take you off the grid
+          move_grid[move_no, 1] = p
+          \/
+          $The move to the right of the current move has already been made
+          exists move : int(1..move_no-1) .
+          (
+            move_grid[move, 1] = move_grid[move_no, 1] + 1
+            /\
+            move_grid[move, 2] = move_grid[move_no, 2]
+            )
+          \/
+          initial_grid[move_grid[move_no, 2], move_grid[move_no, 1]+1] = 1
+          )
+      )
+    /\
+    (
+      (
+        $ Current move to left of previous move
+        move_grid[move_no, 1] = move_grid[move_no-1, 1] - 1
+        /\
+        $ Next move not moved in x coord, i.e. moved up or down
+        move_grid[move_no+1, 1] = move_grid[move_no, 1]
+        ) -> (
+          $ The next move will take you off the grid, to the left
+          move_grid[move_no, 1] = 1
+          \/
+          $The move to the left of the current move has already been made
+          exists move : int(1..move_no-1) .
+          (
+            move_grid[move, 1] = move_grid[move_no, 1] - 1
+            /\
+            move_grid[move, 2] = move_grid[move_no, 2]
+            )
+          \/
+          $Move to left is block
+          initial_grid[move_grid[move_no, 2], move_grid[move_no, 1]-1] = 1
+          )
+      )
+    ),
+
+
+
+move_grid[1, 1] != 0 /\ move_grid[1, 2] != 0
