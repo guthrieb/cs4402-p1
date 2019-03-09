@@ -1,0 +1,96 @@
+language ESSENCE' 1.0
+
+given initial_grid: matrix indexed by [int(1..p), int(1..p)] of int(0,1)
+
+find move_grid: matrix indexed by [int(1..p), int(1..p)] of int(-1..p*p)
+
+such that
+
+alldifferent_except(flatten(move_grid), -1),
+
+forAll row : int(1..p) .
+  forAll col : int(1..p) .
+    initial_grid[row, col] = 1 -> move_grid[row, col] = -1,
+
+forAll row : int(1..p) .
+  forAll col : int(1..p) .
+    (
+        initial_grid[row, col] = 0 -> move_grid[row, col] != -1
+    ),
+
+
+exists i : int(1..p*p) .
+  (flatten(move_grid))[i] = 0,
+
+forAll row : int(1..p) .
+  forAll col : int(1..p) .
+    (
+      move_grid[row, col] != -1 /\ move_grid[row, col] != 0 ->
+        (
+          move_grid[row-1, col] = move_grid[row,col]-1
+          \/
+          move_grid[row+1,col] = move_grid[row,col]-1
+          \/
+          move_grid[row,col-1] = move_grid[row,col]-1
+          \/
+          move_grid[row,col+1] = move_grid[row,col]-1
+        )
+    ),
+
+
+
+$ If previous move was above the current cell, next move must be below or blocked - MAYBE NOT WRONG
+forAll row : int(1..p) .
+  forAll col : int(1..p) .
+    (
+      move_grid[row, col] > 0 /\ move_grid[row-1,col]=move_grid[row,col]-1
+      )->
+      (
+        move_grid[row+1,col] = move_grid[row,col]+1
+        \/
+        move_grid[row+1,col] < move_grid[row,col]
+        \/
+        row=p
+        ),
+
+$ If previous move was below the current cell, next move must be above or blocked - WRONG
+forAll row : int(1..p) .
+  forAll col : int(1..p) .
+    (
+      move_grid[row, col] > 0 /\ move_grid[row+1,col] = move_grid[row,col]-1
+      )->
+      (
+        move_grid[row-1,col] = move_grid[row,col]+1
+        \/
+        move_grid[row-1,col] < move_grid[row,col]
+        \/
+        row=1
+        ),
+
+$If previous move was left of the current cell, next move must be to right or blocked - MAYBE NOT WRONG
+forAll row : int(1..p) .
+  forAll col : int(1..p) .
+    (
+      move_grid[row, col] > 0 /\ move_grid[row,col-1] = move_grid[row,col]-1
+      )->
+      (
+        move_grid[row,col+1] = move_grid[row,col]+1
+        \/
+        move_grid[row,col+1] < move_grid[row,col]
+        \/
+        col=p
+        ),
+
+$If previous move was to the right of the current cell, next move must be to left or blocked - WRONG
+forAll row : int(1..p) .
+  forAll col : int(1..p) .
+    (
+      move_grid[row, col] > 0 /\ move_grid[row,col+1] = move_grid[row,col]-1
+      )->
+      (
+        move_grid[row,col-1] = move_grid[row,col]+1
+        \/
+        move_grid[row,col-1] < move_grid[row,col]
+        \/
+        col=1
+        )
