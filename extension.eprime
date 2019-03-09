@@ -1,0 +1,70 @@
+language ESSENCE' 1.0
+
+given initial_grid: matrix indexed by [int(1..p), int(1..p)] of int(0,1)
+
+letting numlayers be
+  (p*p) - (sum i,j: int(1..p) . initial_grid[i,j])
+
+find positions: matrix indexed by [int(1..numlayers)] of int(1..p*p)
+find moves: matrix indexed by [int(1..numlayers-1)] of int(1, -1, p, -p)
+
+$\\\\(positions[pos_no]/p)\\\\ - (pos_no/(p+1))+1 converting flattened row to 2d row
+$(positions[pos_no]%p)\\\\\ ((pos_no+1)%p)+1 - converting flattened col to 2d row
+
+$(p*row) + col - converting rows + cols to pos
+$
+
+
+
+$((positions[pos_no]-1)/p) + 1 - row
+$(((positions[pos_no]-1)%p) + 1) - col
+
+find test_grid: matrix indexed by [int(1..numlayers)] of int(0..1)
+
+such that
+
+alldifferent(positions),
+
+
+$No position can exists that is a black square
+forAll pos_no : int(1..numlayers) .
+  initial_grid[ ((positions[pos_no]-1)/p) + 1 , ((positions[pos_no]-1)%p) + 1] != 1,
+
+
+$All position changes must be separated by the previous move
+forAll move_no : int(2..numlayers) .
+  (positions[move_no] = (positions[move_no-1] + moves[move_no-1])),
+
+$Cannot jump boundaries
+forAll move_no : int(2..numlayers) .
+  (((positions[move_no]-1)%p) + 1 = 1 ->
+    moves[move_no-1] != 1
+    )
+  /\
+  (((positions[move_no]-1)%p) + 1 = p ->
+    moves[move_no-1] != -1
+    ),
+
+forAll move_no : int(2..numlayers) .
+  (
+    ((moves[move_no-1] = 1) /\ (moves[move_no] != 1) /\ !(
+      ((((positions[move_no]-1)%p) + 1)  = p)
+      \/ 
+      (
+        initial_grid[ ((positions[move_no]-1)/p) + 1 , ((positions[move_no]-1)%p) + 2] = 1
+        )
+      \/
+      (
+        exists prev_move : int(1..move_no) .
+        (
+          (
+            prev_move < move_no
+            )
+          /\
+          (
+            positions[prev_move] = positions[move_no] + 1
+            )
+          )
+        )
+      )) <-> test_grid[move_no] = 1
+    )
