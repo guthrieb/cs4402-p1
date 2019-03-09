@@ -26,6 +26,7 @@ such that
 alldifferent(positions),
 
 
+
 $No position can exists that is a black square
 forAll pos_no : int(1..numlayers) .
   initial_grid[ ((positions[pos_no]-1)/p) + 1 , ((positions[pos_no]-1)%p) + 1] != 1,
@@ -49,7 +50,7 @@ forAll move_no : int(2..numlayers) .
   (
     ((moves[move_no-1] = 1) /\ (moves[move_no] != 1) /\ !(
       ((((positions[move_no]-1)%p) + 1)  = p)
-      \/ 
+      \/
       (
         initial_grid[ ((positions[move_no]-1)/p) + 1 , ((positions[move_no]-1)%p) + 2] = 1
         )
@@ -66,5 +67,77 @@ forAll move_no : int(2..numlayers) .
             )
           )
         )
-      )) <-> test_grid[move_no] = 1
+      )) -> false
+    ),
+
+forAll move_no : int(2..numlayers) .
+  (
+    ((moves[move_no-1] = -1) /\ (moves[move_no] != -1) /\ !(
+      ((((positions[move_no]-1)%p) + 1)  = 1)
+      \/
+      (
+        initial_grid[ ((positions[move_no]-1)/p) + 1 , ((positions[move_no]-1)%p)] = 1
+        )
+      \/
+      (
+        exists prev_move : int(1..move_no) .
+        (
+          (
+            prev_move < move_no
+            )
+          /\
+          (
+            positions[prev_move] = positions[move_no] - 1
+            )
+          )
+        )
+      )) -> false
+    ),
+
+forAll move_no : int(2..numlayers) .
+  (
+    ((moves[move_no-1] = p) /\ (moves[move_no] != p) /\ !(
+      ((((positions[move_no]-1)/p) + 1)  = p)
+      \/
+      (
+        initial_grid[ ((positions[move_no]-1)/p) + 1 + 1 , ((positions[move_no]-1)%p) + 1] = 1
+        )
+      \/
+      (
+        exists prev_move : int(1..move_no) .
+        (
+          (
+            prev_move < move_no
+            )
+          /\
+          (
+            positions[prev_move] = positions[move_no] + p
+            )
+          )
+        )
+      )) -> false
+    ),
+
+forAll move_no : int(2..numlayers) .
+  (
+    ((moves[move_no-1] = -p) /\ (moves[move_no] != -p) /\ !(
+      ((((positions[move_no]-1)/p) + 1)  = 1)
+      \/
+      (
+        (initial_grid[ ((((positions[move_no]-1)/p) + 1))-1 , ((positions[move_no]-1)%p) + 1] = 1)
+        )
+      \/
+      (
+        exists prev_move : int(1..move_no) .
+        (
+          (
+            prev_move < move_no
+            )
+          /\
+          (
+            positions[prev_move] = positions[move_no] - p
+            )
+          )
+        )
+      )) -> false
     )
