@@ -2,38 +2,44 @@ language ESSENCE' 1.0
 
 given initial_grid: matrix indexed by [int(1..p), int(1..p)] of int(0,1)
 
-find move_grid: matrix indexed by [int(1..p*p), int(1..2)] of int(0..p)
+letting numlayers be
+  (p*p) - (sum i,j: int(1..p) . initial_grid[i,j])
+
+find move_grid: matrix indexed by [int(1..numlayers), int(1..2)] of int(0..p)
+find q: int(1..p)
 
 such that
 
-forAll move_no : int(1..p*p) .
-  move_grid[move_no, 1] = 0 <-> move_grid[move_no, 2] = 0,
+q = p,
 
-forAll move_no : int(1..p*p) .
-  forAll move_no_2 : int(1..p*p) .
-    move_grid[move_no, 1] != 0 /\ move_no != move_no_2 ->
+forAll move_no : int(1..numlayers) .
+  forAll move_no_2 : int(1..numlayers) .
+    move_no != move_no_2 ->
     (
       move_grid[move_no, 1] != move_grid[move_no_2, 1]
       \/
       move_grid[move_no, 2] != move_grid[move_no_2, 2]
       ),
 
+$All free spaces in the initial grid have a corresponding value in the move grid
+$All non-free spaces do not have a corresponding value in the move grid
 forAll row : int(1..p) .
   forAll col : int(1..p) .
       (
-        initial_grid[row, col] != 1 ->
-          exists i : int(1..p*p) .
+        initial_grid[row, col] = 0 ->
+          exists i : int(1..numlayers) .
             move_grid[i, 1] = col /\ move_grid[i, 2] = row
           )
       /\
       (
       initial_grid[row, col] = 1 ->
-        forAll i : int(1..p*p) .
+        forAll i : int(1..numlayers) .
           move_grid[i, 1] != col \/ move_grid[i, 2] != row
           ),
 
-
-forAll move_no : int(2..p*p) .
+$ All moves, barring the first move, must have a previous move that is adjacent
+$ In x or y, but not both
+forAll move_no : int(2..numlayers) .
   move_grid[move_no, 1] != 0 ->
     (
       (
@@ -55,58 +61,103 @@ forAll move_no : int(2..p*p) .
           move_grid[move_no, 2] = move_grid[move_no-1, 2] - 1
           )
         )
-      ),
+    ),
 
-forAll move_no : int(2..p*p) .
-  move_grid[move_no, 1] != 0 -> (
+forAll move : int(2..numlayers) .
+  (
     (
+      $Moving right
       (
-        $ Current move to right of previous move
-        move_grid[move_no, 1] = move_grid[move_no-1, 1] + 1
-        /\
-        $ Next move not moved in x coord, i.e. moved up or down
-        move_grid[move_no+1, 1] = move_grid[move_no, 1]
-        ) -> (
-          $ The next move will take you off the grid
-          move_grid[move_no, 1] = p
-          \/
-          $The move to the right of the current move has already been made
-          exists move : int(1..move_no-1) .
-          (
-            move_grid[move, 1] = move_grid[move_no, 1] + 1
-            /\
-            move_grid[move, 2] = move_grid[move_no, 2]
-            )
-          \/
-          initial_grid[move_grid[move_no, 2], move_grid[move_no, 1]+1] = 1
+        $If diff in x coordinate +1, moving right
+        move_grid[move, 1] = move_grid[move-1, 1]+1
+      )->
+      ((
+        $Next move is to the right
+        move_grid[move, 1] = move_grid[move+1, 1]-1
+        )
+        \/
+        $Current move is on edge of grid
+        move_grid[move, 1] = p
+        \/
+        $Move to right has already been made
+        exists prev_move : int(1..p) .
+          move_grid[prev_move, 1] = move_grid[move, 1]+1
+          /\
+          move_grid[prev_move, 2] = move_grid[move, 2]
+        )
+        \/
+        $Move to right is blocked
+        initial_grid[move_grid[move, 2], move_grid[move, 1]+1]=1
+        )
+    /\
+    (
+      $Moving left
+      (
+        $Of doff in x coordinate -1, moving left
+        move_grid[move, 1] = move_grid[move-1, 1]-1
+      )->
+      ((
+        $Next move is to the left
+        move_grid[move, 1] = move_grid[move+1, 1]+1
+        )
+        \/
+        $Current move is on edge of grid
+        move_grid[move, 1] = 1
+        \/
+        $Move to right has already been made
+        exists prev_move : int(1..p) .
+          move_grid[prev_move, 1] = move_grid[move, 1]-1
+          /\
+          move_grid[prev_move, 2] = move_grid[move, 2]
+        )
+        \/
+        $Move to right is blocked
+        initial_grid[move_grid[move, 2], move_grid[move, 1]-1]=1
+        )
+    /\
+    (
+      $Moving down
+      (
+        $If ydiff is +1, moving down
+        move_grid[move, 2] = move_grid[move-1, 2]+1
+      )->
+      ((
+        $Next move is below
+        move_grid[move, 2] = move_grid[move+1, 2]-1
+        )
+        \/
+        
+        move_grid[move, 2] = p
+        \/
+        exists prev_move : int(1..p) .
+          move_grid[prev_move, 2] = move_grid[move, 2]+1
+          /\
+          move_grid[prev_move, 1] = move_grid[move, 1]
+        )
+        \/
+        (
+          initial_grid[move_grid[move, 2]+1, move_grid[move, 1]]=1
           )
-      )
+        )
     /\
     (
       (
-        $ Current move to left of previous move
-        move_grid[move_no, 1] = move_grid[move_no-1, 1] - 1
-        /\
-        $ Next move not moved in x coord, i.e. moved up or down
-        move_grid[move_no+1, 1] = move_grid[move_no, 1]
-        ) -> (
-          $ The next move will take you off the grid, to the left
-          move_grid[move_no, 1] = 1
-          \/
-          $The move to the left of the current move has already been made
-          exists move : int(1..move_no-1) .
-          (
-            move_grid[move, 1] = move_grid[move_no, 1] - 1
-            /\
-            move_grid[move, 2] = move_grid[move_no, 2]
-            )
-          \/
-          $Move to left is block
-          initial_grid[move_grid[move_no, 2], move_grid[move_no, 1]-1] = 1
+      move_grid[move, 2] = move_grid[move-1, 2]-1
+      )->
+      ((
+        move_grid[move, 2] = move_grid[move+1, 2]+1
+        )
+        \/
+        move_grid[move, 2] = 1
+        \/
+        exists prev_move : int(1..p) .
+          move_grid[prev_move, 2] = move_grid[move, 2]-1
+          /\
+          move_grid[prev_move, 1] = move_grid[move, 1]
+        )
+        \/
+        (
+          initial_grid[move_grid[move, 2]-1, move_grid[move, 1]]=1
           )
-      )
-    ),
-
-
-
-move_grid[1, 1] != 0 /\ move_grid[1, 2] != 0
+        )
+    )
